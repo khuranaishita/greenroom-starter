@@ -22,6 +22,38 @@ are most clearly losing on craft. 18% of customers use
 the in-app tool. The other 82% default to spreadsheets."
 That's not a UX problem. That's an existential signal.
 
+## What I cut and why
+
+**AI deal parsing for Vs deals:** The feature shell 
+exists in the app but requires an API key and adds 
+a dependency. I cut it for this submission because 
+fixing the math first proves the concept with zero 
+dependencies. A working calculator beats a broken 
+AI feature every time. AI parsing is the right next 
+layer — it prevents the Coastal Spell scenario by 
+flagging ambiguous terms before settlement — but 
+only after the foundation is solid.
+
+**Walkout pots and tier ratchets:** show_0007 has a 
+walkout pot. I noted it, didn't build it. Including 
+it would have taken another hour and added complexity 
+without proving anything new about the core problem. 
+It's a math extension, not a new insight.
+
+**Agent portal and sharing:** High value but a 
+completely separate surface with its own auth, 
+permissions, and design requirements. Building it 
+in this slice would have meant doing two things 
+poorly instead of one thing well.
+
+**Full dispute resolution workflow:** The ambiguity 
+flagging I added prevents disputes at the source. 
+Managing disputes after the fact is treating the 
+symptom. I'd rather fix the calculator and the 
+status integrity problem first — those two things 
+reduce the dispute rate before you need a resolution 
+workflow.
+
 ## What I built
 
 **1. % of net calculator**
@@ -106,6 +138,34 @@ Specifically:
 - Count disputed settlements that have positive 
   sign-offs — this number should drop to zero as 
   statuses get cleaned up
+
+  ## Design choices
+
+I matched the existing flat deal worksheet style exactly 
+— same card, same line-by-line layout, same big hero 
+number. This was a deliberate choice. Mariana already 
+trusts that UI at 2am. She knows what the flat deal 
+settlement looks like. Introducing a new visual pattern 
+for % of net would add cognitive load at exactly the 
+wrong moment.
+
+The step-by-step layout isn't just aesthetic — it's 
+the audit trail. Every line is labeled so the tour 
+manager can follow the math independently. The Coastal 
+Spell dispute happened because nobody could trace the 
+$720 difference back to a specific decision. A 
+transparent worksheet prevents that conversation.
+
+I also chose to show the expense cap behavior 
+explicitly — "Capped at $550 · actual $1,404" — 
+because that's exactly the kind of ambiguity that 
+causes disputes. The number on screen should never 
+be surprising to either party.
+
+The disputed status banner is intentionally minimal — 
+one amber line, no modal, no blocking action. Mariana 
+is busy at 2am. She needs to notice it, not deal with 
+it right now.
 
 ## What I'd ship next
 

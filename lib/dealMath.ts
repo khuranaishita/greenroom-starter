@@ -168,6 +168,67 @@ export function calculateSettlement(input: CalcInput): SettlementCalculation {
     };
   }
 
+  // ---------- percentage of net ----------
+  if (deal.dealType === "percentage_of_net") {
+    if (deal.percentage == null) {
+      return {
+        supported: false,
+        reason: "Percentage-of-net deal is missing a percentage.",
+        dealType: deal.dealType,
+      };
+    }
+
+    const cappedExpenses =
+      deal.expenseCap != null
+        ? Math.min(totalExpenses, deal.expenseCap)
+        : totalExpenses;
+    const expenseWasCapped =
+      deal.expenseCap != null && totalExpenses > deal.expenseCap;
+    const netAfterExpenses = Math.max(0, netBoxOffice - cappedExpenses);
+    const artistTake = netAfterExpenses * deal.percentage;
+
+    const bonusResult = applyBonuses(parseBonuses(deal), {
+      gross: grossBoxOffice,
+      tickets,
+      capacity: venueCapacity,
+    });
+
+    const pctDisplay = (deal.percentage * 100).toFixed(0);
+    const fmt = (n: number) =>
+      new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+
+    const expenseNote = expenseWasCapped
+      ? `Capped at ${fmt(deal.expenseCap!)} · actual ${fmt(totalExpenses)}`
+      : deal.expenseCap != null
+        ? `Under cap (${fmt(deal.expenseCap)} cap)`
+        : undefined;
+
+    return {
+      supported: true,
+      grossBoxOffice,
+      netBoxOffice,
+      totalExpenses,
+      totalToArtist: artistTake + bonusResult.totalApplied,
+      steps: [
+        { label: "Less: expenses", value: -cappedExpenses, note: expenseNote },
+        { label: "Net after expenses", value: netAfterExpenses },
+        {
+          label: `× ${pctDisplay}%`,
+          value: artistTake,
+          note: "Percentage of net after expenses",
+        },
+        ...bonusResult.applied.map((b) => ({
+          label: b.label,
+          value: b.amount,
+          note: b.reason,
+        })),
+      ],
+      finalFormula: `net after expenses × ${deal.percentage} = ${artistTake.toFixed(2)}`,
+      bonusesApplied: bonusResult.applied,
+      bonusesNotTriggered: bonusResult.notTriggered,
+    };
+  }
+
   // ---------- everything else: not supported ----------
   const friendlyName: Record<Deal["dealType"], string> = {
     flat: "Flat guarantee",

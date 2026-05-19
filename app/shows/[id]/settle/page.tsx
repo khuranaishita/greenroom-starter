@@ -29,6 +29,7 @@ import {
 } from "@/lib/format";
 import type { Settlement, Recoup } from "@/db/schema";
 import { Logomark } from "@/components/brand/logo";
+import { VsDealCalculator } from "./vs-deal-calculator";
 
 const RECOUP_LABELS: Record<Recoup["category"], string> = {
   marketing: "Marketing",
@@ -122,12 +123,43 @@ export default async function SettlePage({
         </div>
       )}
 
+      {settlement?.status === "disputed" && settlement?.signoffText && (
+        <div className="mb-6 rounded-lg border border-amber-200/60 bg-amber-50/40 p-5 flex gap-3">
+          <AlertTriangle className="h-4 w-4 text-amber-700 mt-0.5 shrink-0" />
+          <div className="text-[13px] text-ink-800 leading-relaxed">
+            Status shows disputed — but agent signed off:{" "}
+            <span className="font-medium">&ldquo;{settlement.signoffText}&rdquo;</span>. This may have been resolved off-platform.
+          </div>
+        </div>
+      )}
+
       {settlement && (
         <LifecycleBar settlement={settlement} disputedRecoups={disputedRecoups.length} />
       )}
 
       <div className="space-y-6 mt-6">
-        {!calc.supported ? (
+        {deal.dealType === "vs" ? (
+          <VsDealCalculator
+            dealNotesFreetext={deal.dealNotesFreetext ?? ""}
+            guaranteeAmount={deal.guaranteeAmount ?? 0}
+            percentageDecimal={deal.percentage ?? 0}
+            expenseCap={deal.expenseCap ?? null}
+            hospitalityCap={deal.hospitalityCap ?? null}
+            ticketSales={ticketSales.map((t) => ({
+              gross: t.gross,
+              fees: t.fees,
+              qty: t.qty,
+            }))}
+            expenses={expenses
+              .filter((e) => !e.absorbedByVenue)
+              .map((e) => ({
+                amount: e.amount,
+                category: e.category,
+                description: e.description,
+              }))}
+            artistName={artist?.name ?? "Artist"}
+          />
+        ) : !calc.supported ? (
           <UnsupportedDeal
             dealType={calc.dealType}
             deal={deal}
